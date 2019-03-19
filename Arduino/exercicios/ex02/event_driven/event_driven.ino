@@ -44,15 +44,18 @@ void loop() {
   int but3 = digitalRead(BUTTON3);
   unsigned long now = millis(); 
   if( listenButtons[0] && ( but1 != lastButtonRead[0] ) && ( now >= buttonsCurrTime[0] + buttonsTimeout[0] )  ) {
+    lastButtonRead[0] = but1;
     buttonsCurrTime[0] = now;
     button_changed(BUTTON1,but1);
   }
-  if( listenButtons[1] && ( but1 != lastButtonRead[0] ) && ( now >= buttonsCurrTime[1] + buttonsTimeout[1] )  ) {
+  if( listenButtons[1] && ( but2 != lastButtonRead[1] ) && ( now >= buttonsCurrTime[1] + buttonsTimeout[1] )  ) {
+    lastButtonRead[1] = but2;
     buttonsCurrTime[1] = now;
     button_changed(BUTTON2,but2);
   }
-  if( listenButtons[2] && ( but1 != lastButtonRead[0] ) && ( now >= buttonsCurrTime[2] + buttonsTimeout[2] )  ) {
+  if( listenButtons[2] && ( but3 != lastButtonRead[2] ) && ( now >= buttonsCurrTime[2] + buttonsTimeout[2] )  ) {
     buttonsCurrTime[2] = now;
+    lastButtonRead[2] = but3;
     button_changed(BUTTON2,but3);
   }
   if( timer && ( now >= whenTimeWasSet + timer) ) {

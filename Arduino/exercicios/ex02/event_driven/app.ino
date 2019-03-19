@@ -9,18 +9,19 @@ void appinit(void) {
   pinMode(LED1,OUTPUT);
   digitalWrite(LED1, LOW);
   button_listen(BUTTON1);
+  button_listen(BUTTON2);
   timer_set(0,ledTime);
-//  button_listen(BUTTON2);
+  
   
 }
 
 
 void button_changed(int p, int v) { 
   if ( p == BUTTON1 && v == LOW) {     
-      ledTime += 500;
+      ledTime += 250;
   }
   if ( p == BUTTON2 && v == LOW) {     
-      ledTime -= 500;
+      ledTime -= 250;
   } 
 }
 
