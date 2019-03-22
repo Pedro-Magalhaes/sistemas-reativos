@@ -1,7 +1,7 @@
 
 #include "event_driven.h"
-#include "app.h"
-#include "pindefs.h"
+#include "../app.h"
+#include "../../shared/pindefs.h"
 #define B_TIMEOUT 300
 
 bool listenButtons[3] = { false,false,false };
