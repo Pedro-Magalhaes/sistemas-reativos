@@ -1,6 +1,11 @@
-#include "event_driven/event_driven.h"
+#include "event_driven.h"
 #include "app.h"
-#include "../shared/pindefs.h"
+#include "pindefs.h"
+
+#define WAIT_TIME 20 // tempo de espera para definir se 2 botões foram clicados ao mesmo tempo
+#define MIN_TIME 100
+#define MAX_TIME 3000
+#define TIME_STEP 250
 
 unsigned int ledValue = 0;
 unsigned short int ledTime = 500;
@@ -20,15 +25,23 @@ void appinit(void) {
 
 void button_changed(int p, int v) {
   unsigned long int now = millis();
-  if ( (p != lastButtonPressed) && (now - lastButtonChange < 100)) { // termina o programa
+  if ( (p != lastButtonPressed) && (now - lastButtonChange < WAIT_TIME)) { // termina o programa
       digitalWrite(LED1, LOW);
       while(1);
   }
-  if ( p == BUTTON1 && v == LOW) {     
-      ledTime += 250;
+  if ( p == BUTTON1 && v == LOW) {
+      if ( ledTime < MAX_TIME - TIME_STEP ) {
+      ledTime += TIME_STEP;
+      } else {
+      ledTime = MAX_TIME;
+    }
   }
   else if ( p == BUTTON2 && v == LOW) {
-      ledTime -= 250;
+      if ( ledTime > MIN_TIME + TIME_STEP ) {
+        ledTime -= TIME_STEP;
+      } else {
+        ledTime = MIN_TIME;
+      }      
   }
   lastButtonPressed = p;
   lastButtonChange = now;
