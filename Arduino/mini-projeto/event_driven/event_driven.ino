@@ -4,6 +4,13 @@
 #include "app.h"
 #define B_TIMEOUT 50
 
+typedef struct eventButtons {
+  unsigned short int buttonsCurrTime;
+  unsigned short int buttonsTimeout;
+  int lastButtonRead;
+  bool isListen = false;
+} eventButtons;
+
 bool listenButtons[3] = { false,false,false };
 int lastButtonRead[3] = { HIGH, HIGH, HIGH };
 unsigned short int buttonsTimeout[] = { B_TIMEOUT, B_TIMEOUT, B_TIMEOUT };
