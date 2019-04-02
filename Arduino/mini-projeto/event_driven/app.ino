@@ -24,6 +24,7 @@ void appinit(void) {
       WriteNumberToSegment(i , timeVector[i]);
     }
     timer_set(CLOCK,MINUTE);
+    timer_set(BLINK,10);
 //    Serial.begin(9600);
 }
 void button_changed ( int pin, int v);
@@ -31,10 +32,7 @@ void button_changed ( int pin, int v);
 
 void timer_expired(int id) {
   if(id == CLOCK) {
-    updateTimeVector();
-    for (int i = 0; i < 4; i++) {
-      WriteNumberToSegment(i , timeVector[i]);
-    }
+    updateTimeVector();    
     timer_set(CLOCK,MINUTE);
   }
   else if( id == ALARM ){
@@ -42,6 +40,10 @@ void timer_expired(int id) {
   }
   else if( id == BLINK ){
     // call to blink
+    for (int i = 0; i < 4; i++) {
+      WriteNumberToSegment(i , timeVector[i]);
+      timer_set(BLINK,10);
+    }
   }
     
 }
