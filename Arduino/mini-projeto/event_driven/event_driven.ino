@@ -3,13 +3,20 @@
 #include "pindefs.h"
 #include "app.h"
 #define B_TIMEOUT 50
+#define MAX_TIMERS 3
 
 bool listenButtons[3] = { false,false,false };
 int lastButtonRead[3] = { HIGH, HIGH, HIGH };
 unsigned short int buttonsTimeout[] = { B_TIMEOUT, B_TIMEOUT, B_TIMEOUT };
 unsigned short int buttonsCurrTime[] = { 0, 0, 0 };
-unsigned int timer = 0;
-unsigned long int whenTimeWasSet = 0;
+int freeTimerPos = 0;
+typedef struct timer {
+  bool inUse = false;
+  unsigned int timer = 0;
+  unsigned long int whenTimeWasSet = 0;
+} Timer;
+
+Timer timers[MAX_TIMERS];
 
 
 void button_listen (int pin) {
@@ -23,9 +30,10 @@ void button_listen (int pin) {
     listenButtons[2] = true;
   }
 }
-void timer_set (int n,int ms) {
-  whenTimeWasSet = millis();
-  timer = ms;
+void timer_set (int timerId,int ms) {
+  timers[timerId].inUse = true;
+  timers[timerId].whenTimeWasSet = millis();
+  timers[timerId].timer = ms;
 }
 
 void setup() {
@@ -68,11 +76,13 @@ void loop() {
     lastButtonRead[2] = but3;
     button_changed(BUTTON2,but3);
   }
-  if( timer && ( now >= whenTimeWasSet + timer) ) {
-    timer = 0;
-    timer_expired();
-  }
-  
+  for(int i = 0; i < MAX_TIMERS; i++) {
+    if( timers[i].inUse && ( now >= timers[i].whenTimeWasSet + timers[i].timer) ) {
+      timers[i].timer = 0;
+      timers[i].inUse = false;
+      timer_expired(i);
+    } 
+  }  
   
   
 }
