@@ -4,7 +4,7 @@
 #define ALARM 1
 #define BLINK 2
 #define BLINK_TIME 400
-#define MINUTE 1000
+#define MINUTE 60000
 #define BUZZ_TIMER 250
 #define BUTTON_WAIT 50
 
@@ -17,7 +17,7 @@ const byte SEGMENT_SELECT[] = {0xF1, 0xF2, 0xF4, 0xF8};
 
 byte timeVector[2][4] = { {0, 0, 0, 0}, {0, 0, 0, 0} };
 bool timeSet = false;
-bool setMinute = true;
+bool setMinute = false;
 bool alarmRinging = false;
 bool displayAlarm = false;
 unsigned short int buzzStatus = LOW;
@@ -54,7 +54,6 @@ void appinit(void) {
   button_listen(BUTTON3);
   timer_set(CLOCK, MINUTE);
   timer_set(BLINK, 1);
-  Serial.begin(9600);
 }
 
 void button_changed ( int pin, int v) {
@@ -73,7 +72,7 @@ void button_changed ( int pin, int v) {
       if (timeSet) {
         setMinute = !setMinute;
       } else if ( alarmRinging ) {
-        snooze();
+        clearAlarm();
       }
     } else if ( pin == BUTTON2 ) {
       if (timeSet) { // esta ajustando a hora
@@ -81,7 +80,7 @@ void button_changed ( int pin, int v) {
         int addTime = setMinute ? 1 : 60;
         increaseTimeVector(timeVector[type], addTime);
       } else if (alarmRinging) { // vou parar o alarme e colocar no estado inicial
-        initial_state();
+        snooze();
       }
     }
     lastButtonPressed = pin;
@@ -91,13 +90,13 @@ void button_changed ( int pin, int v) {
 
 void snooze() {
   clearAlarm();
-  for( int i = 0; i < 4; i++ ) { // copiando a hora em que o snooze foi clicado
+  for ( int i = 0; i < 4; i++ ) { // copiando a hora em que o snooze foi clicado
     timeVector[ALARM][i] = timeVector[CLOCK][i];
   }
   increaseTimeVector(timeVector[ALARM], 5); // + 5 min
 }
 
-clearAlarm() {
+void clearAlarm() {
   alarmRinging = false;
   buzzStatus = HIGH;
   digitalWrite(BUZZER, buzzStatus);
@@ -132,14 +131,14 @@ void next_state() {
     digitalWrite(LED2, LOW);
   } else if (currState == States::setAlarm) {
     blinkDisplay = 0;
-    displayAlarm = true;
-    timeSet = setMinute = true;
+    timeSet = displayAlarm = true;
+    setMinute = false;
     digitalWrite(LED3, HIGH);
     digitalWrite(LED4, LOW);
   } else if (currState == States::setTime) {
     blinkDisplay = 0;
-    displayAlarm = false;
-    timeSet = setMinute = true;
+    displayAlarm = setMinute = false;
+    timeSet =  true;
     digitalWrite(LED2, HIGH);
     digitalWrite(LED3, LOW);
   }
@@ -171,7 +170,7 @@ void timer_expired(int id, unsigned long int now) {
           start = 2; // não vai escrever na hora
         }
       }
-      if( now >= lastButtonPressedTime + 10000 ) {
+      if ( now >= lastButtonPressedTime + 10000 ) {
         initial_state();
       }
     }
