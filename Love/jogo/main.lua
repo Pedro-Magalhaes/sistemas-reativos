@@ -1,4 +1,4 @@
-__debug__ = true
+--__debug__ = true
 
 local function newloot ()
   local side = 25
