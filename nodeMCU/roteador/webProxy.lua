@@ -1,5 +1,5 @@
-local ssid = "Frioland"
-local pwd = "9999999999"
+local ssid = "Minharede"
+local pwd = "12345678B"
 
 -- lista de não permitidos
 proibido = {
