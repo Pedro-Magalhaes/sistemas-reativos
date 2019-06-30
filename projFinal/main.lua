@@ -1,13 +1,22 @@
 local mqtt = require("mqtt_library")
 local questions = require("gameconfig")
 local controle = true
+local listen = "mcu"
+local publish = "love"
+local broadcast = "0"
 
-local state = "cadastro"
 local curr_message = nil
 local tratamento
 local n_players = 0
 local n_question = 0
 
+local state = "cadastro"
+--[[ states:
+  cadastro: aguardando players recebe mensagens com o id dos mcus envia ack respondendo ao cadastro
+  fase: recebe mensagens na forma <idMcu,btn>
+  endgame: nao recebe mensagens
+  
+]]
 
 local function newplayer(id,name)
   local playerid = id
@@ -78,11 +87,24 @@ function checkanswer()
       end
 end
 
+local function endgame()
+  local highScore = -100000
+  local winner = -10000
+  for playerid, player in pairs(players) do
+    local score = player.getscore()
+    if score > highScore then
+      winner = playerid
+    end
+  end
+  mqtt_client:publish(publish,broadcast .. "," .. winner) -- postando o vencedor
+end
+
 
 function newQuestion() 
   n_question = n_question + 1
   if n_question > #questions then
     state = "fim"
+    endgame()
     return
   end
   for _, player in pairs(players) do
@@ -92,8 +114,9 @@ function newQuestion()
 end
 
 function mqttcb(topic, message)
-   local id,btn = message:match("([1-9]+)%s*,%s*([12])")
-   controle = not controle
+   -- as msgs recebidas sao no padrao <id,btn>, btn é 1 ou 2, id é um int
+   local id,btn = message:match("([1-9]+)%s*,%s*([12])") 
+   controle = not controle -- TODO: retirar??
    print("mensagem recebida " .. message)
    print("id = " .. id .. " btn = " .. btn)
    tratamento(id, tonumber(btn))
@@ -101,7 +124,6 @@ end
 
 
 function love.load()
-  local listen = "mcu"
   players = {}
   n_players = 0
   n_question = 0
@@ -110,15 +132,11 @@ function love.load()
   
   listabls = {}
   mqtt_client = mqtt.client.create("test.mosquitto.org",   1883, mqttcb)
-  print("antes de a")
   mqtt_client:connect("love1611")
-  print("a")
   mqtt_client:subscribe({listen})
-  mqtt_client:publish("love","hello")
 end
 
 function love.keypressed(key)
-  print(key)
   if state == "cadastro" then 
       if key == "return" then
         state = "fase"
@@ -131,9 +149,7 @@ function love.keypressed(key)
         checkanswer()
         newQuestion()
       end
-  end
-  
-  
+  end  
 end
 
 

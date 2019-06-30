@@ -1,8 +1,11 @@
 
 local id = node.chipid()
-print("nodeid = "..id)
-local listen = "love"
-local publishTopic = "mcu"
+local broadcast = 0  -- mensagem do servidor de broadcast
+
+-- mqtt topics
+local listen = "love" -- postar respostas e cadastro
+local publishTopic = "mcu" -- receber notificações 
+
 local led1 = 3
 local led2 = 6
 local sw1 = 1
@@ -17,17 +20,34 @@ gpio.write(led2, gpio.LOW);
 gpio.mode(sw1,gpio.INT,gpio.PULLUP)
 gpio.mode(sw2,gpio.INT,gpio.PULLUP)
 
+-- estados { "cadastro","aguardando", "respondendo", "respondido", "vitoria", "derrota" }
+--[[
+  cadastro: leds apagados e qualquer botão cadastra o mcu no jogo [publica para cadastro]
+  aguardando: led verde aceso indicando que foi cadastrado e está aguardando o inicio [não pode publicar]
+  respondendo: leds acesos e o click no botão indica a resposta botão 1 false e botão 2 true [publica resposta]
+  respondido: led correspondente a resposta enviada aceso [não pode publicar]
+  vitoria: led verde aceso [não pode publicar]
+  derrota: led vermelho aceso [não pode publicar]
+]]
 
-function publica(sw)
-  m:publish(publishTopic, id..","..sw, -- para testes em listen
+estado = "cadastro"
+
+local function publica(sw)
+  m:publish(publishTopic, id..","..sw, 
   0, 0)
- end
+end
+
+-- Recebe high ou low para cada led acendendo ou não cada um deles
+local function changeLed(led1Status,led2Status)
+  gpio.write(led1, gpio.led1Status);
+  gpio.write(led2, gpio.led2Status);
+end
 
 local function fabricaBotao (botao)
   local ultimoClique = 0
   
-  local function deb(time) 
-    if(time - ultimoClique > 250000) then
+  local function deb(time) -- funçao de debounce 
+    if(time - ultimoClique > 250000) then -- microssegundos
       ultimoClique = time
       return true
     end
@@ -38,9 +58,53 @@ local function fabricaBotao (botao)
     if not deb(timeStamp) then 
       return 
     end
-    publica(botao)   
+    if estado == "cadastro" or estado == "respondendo" then
+      publica(botao)
+      if estado == "respondendo" then
+        estado = "respondido"
+        local led1Stat = gpio.LOW
+        local led2Stat = gpio.LOW
+        if botao == "1" then 
+          led1Stat = gpio.high
+        else
+          led2Stat = gpio.high
+        end
+        changeLed(led1Stat,led2Stat)
+    end
   end
   return hitbt
+end
+
+
+function handleMessage(msg)
+  print(msg) -- debbug
+  if estado == "cadastro" then
+    if msg == "ack" then -- confirmação de cadastro
+      estado = "aguardando"
+      changeLed(gpio.HIGH,gpio.LOW) -- verde ligado
+    end
+  elseif estado == "vitoria" or estado == "derrota" then
+    if msg == "next" then 
+      estado = "cadastro"
+      changeLed(gpio.LOW,gpio.LOW) -- verde ligado
+    end
+  else
+    if msg == "next" then
+      estado = "respondendo"
+      changeLed(gpio.HIGH,gpio.HIGH)
+    elseif msg == id then
+      estado = "vitoria"
+      changeLed(gpio.HIGH,gpio.LOW)
+    else
+      estado = "derrota"
+      changeLed(gpio.LOW,gpio.HIGH)
+    end
+  end
+end
+
+function parseMessage(rawMsg)
+  print(message:match("([1-9]+)%s*,%s*([12])")) -- debbug
+  return  message:match("([1-9]+)%s*,%s*([12])")
 end
 
 function subscribe (m, client) 
@@ -54,9 +118,10 @@ function subscribe (m, client)
 
   m:on("message", 
     function(client, topic, data) 
-      print(topic .. ":" )
-      if data ~= nil then
-        print(data)
+      --print(topic .. ":" )
+      dest, msg = parseMessage(data)
+      if dest == "0" or dest == id then -- broadcast ou para o id do mcu
+        handleMessage(msg)
       end
     end
   )
