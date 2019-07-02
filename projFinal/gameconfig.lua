@@ -1,14 +1,14 @@
- -- 1 = False
- -- 2 = True
+local False = 1
+local True = 2 
 
 local questions = { 
-   {q=" Ratos sentem cocegas",a=2},
-   {q=" O coracao de um beija flor\n para se ele pousa",a=1},
-   {q=" Golfinhos dao nomes uns aos outros",a=2},
-   {q=" Orcas sao uma especie de golfinho",a=2},
-   {q=" Caes e gatos enxergam \nsomente em preto e branco",a=1},
-   {q=" A memoria de um peixe \ndourado dura ate um dia",a=1},
-   {q=" Todo tubarao sufoca se parar de \nnadar por muito tempo",a=1},
+   {q=" Ratos sentem cocegas",a=True},
+   {q=" O coracao de um beija flor\n para se ele pousa",a=False},
+   {q=" Golfinhos dao nomes uns aos outros",a=True},
+   {q=" Orcas sao uma especie de golfinho",a=True},
+   {q=" Caes e gatos enxergam \nsomente em preto e branco",a=False},
+   {q=" A memoria de um peixe \ndourado dura ate um dia",a=False},
+   {q=" Todo tubarao sufoca se parar de \nnadar por muito tempo",a=False},
 }
 
 --Fontes:
