@@ -153,7 +153,7 @@ function love.load()
   background = love.graphics.newImage("assets/wood.jpg")
   back_width , back_height = background:getDimensions()
   
-  mqtt_client = mqtt.client.create("85.119.83.194",   1883, mqttcb)
+  mqtt_client = mqtt.client.create("test.mosquitto.org",   1883, mqttcb)
   mqtt_client:connect("love1611")
   mqtt_client:subscribe({listen})
 end

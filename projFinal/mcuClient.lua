@@ -113,7 +113,7 @@ end
 function connect (  ) 
   m = mqtt.Client("mcu"..id, 120)
   -- conecta com servidor mqtt na porta 1883 (com o endereço esva dando erro)
-  m:connect("85.119.83.194", 1883, 0,
+  m:connect("test.mosquitto.org", 1883, 0,
     -- callback em caso de sucesso  
     function(client) 
       print("conected")
