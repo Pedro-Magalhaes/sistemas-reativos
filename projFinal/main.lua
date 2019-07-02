@@ -67,10 +67,12 @@ function tratamento_cad(id, btn)
 end
 
 function tratamento_fase(id, btn)
-  if players[id].getanswer() == nil then
-    players[id].saveanswer(btn)
-    print("fase id = " .. id .. " btn = " .. btn, "player "..players[id].getname())   
-    mqtt_client:publish(publish,id .. "," .. "ack")
+  if players[id] ~= nil then
+    if players[id].getanswer() == nil then
+      players[id].saveanswer(btn)
+      print("fase id = " .. id .. " btn = " .. btn, "player "..players[id].getname())   
+      mqtt_client:publish(publish,id .. "," .. "ack")
+    end
   end
 end
 
