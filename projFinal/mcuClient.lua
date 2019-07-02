@@ -128,8 +128,8 @@ end
 
 wificonf = {  
   -- verificar ssid e senha  
-  ssid = "Frioland",  
-  pwd = "9999999999",  
+  ssid = "Minharede",  
+  pwd = "12345678B",  
   got_ip_cb = function (con)
                 print("connecting")
                 connect()
