@@ -8,8 +8,8 @@ local publishTopic = "mcu" -- receber notificações
 
 local led1 = 3
 local led2 = 6
-local sw1 = 1
-local sw2 = 2
+local sw1 = 1  -- resposta false
+local sw2 = 2 -- resposta true
 
 gpio.mode(led1, gpio.OUTPUT)
 gpio.mode(led2, gpio.OUTPUT)
@@ -20,17 +20,14 @@ gpio.write(led2, gpio.LOW);
 gpio.mode(sw1,gpio.INT,gpio.PULLUP)
 gpio.mode(sw2,gpio.INT,gpio.PULLUP)
 
--- estados { "cadastro","aguardando", "respondendo", "respondido", "vitoria", "derrota" }
---[[
+--[[ "estados" do node MCU
   cadastro: leds apagados e qualquer botão cadastra o mcu no jogo [publica para cadastro]
-  aguardando: led verde aceso indicando que foi cadastrado e está aguardando o inicio [não pode publicar]
   respondendo: leds acesos e o click no botão indica a resposta botão 1 false e botão 2 true [publica resposta]
-  respondido: led correspondente a resposta enviada aceso [não pode publicar]
-  vitoria: led verde aceso [não pode publicar]
-  derrota: led vermelho aceso [não pode publicar]
+  respondido: led correspondente a resposta enviada aceso 
+  vitoria: led verde aceso 
+  derrota: led vermelho aceso 
 ]]
 
-estado = "cadastro"
 
 local function publica(sw)
   m:publish(publishTopic, id..","..sw, 
@@ -38,9 +35,9 @@ local function publica(sw)
 end
 
 -- Recebe high ou low para cada led acendendo ou não cada um deles
-local function changeLed(led1Status,led2Status)
-  gpio.write(led1, gpio.led1Status);
-  gpio.write(led2, gpio.led2Status);
+local function changeLed(led2Status,led1Status)
+  gpio.write(led1, led1Status);
+  gpio.write(led2, led2Status);
 end
 
 local function fabricaBotao (botao)
@@ -54,57 +51,42 @@ local function fabricaBotao (botao)
     return false
   end
   
-  local function hitbt(estado,timeStamp) 
+  local function hitbt(state,timeStamp) 
     if not deb(timeStamp) then 
       return 
     end
-    if estado == "cadastro" or estado == "respondendo" then
-      publica(botao)
-      if estado == "respondendo" then
-        estado = "respondido"
-        local led1Stat = gpio.LOW
-        local led2Stat = gpio.LOW
-        if botao == "1" then 
-          led1Stat = gpio.high
-        else
-          led2Stat = gpio.high
-        end
-        changeLed(led1Stat,led2Stat)
+    publica(botao)      
+    local led1Stat = gpio.LOW
+    local led2Stat = gpio.LOW
+    if botao == 1 then 
+      led1Stat = gpio.HIGH
+    else
+      led2Stat = gpio.HIGH
     end
-  end
+    changeLed(led2Stat,led1Stat)
+
+  end -- end hitbt
+
   return hitbt
 end
 
 
 function handleMessage(msg)
-  print(msg) -- debbug
-  if estado == "cadastro" then
-    if msg == "ack" then -- confirmação de cadastro
-      estado = "aguardando"
-      changeLed(gpio.HIGH,gpio.LOW) -- verde ligado
-    end
-  elseif estado == "vitoria" or estado == "derrota" then
-    if msg == "next" then 
-      estado = "cadastro"
-      changeLed(gpio.LOW,gpio.LOW) -- verde ligado
-    end
+  print("handleMessage: ",msg) -- debbug  
+  if msg == "responder" then
+    changeLed(gpio.HIGH,gpio.HIGH)
+  elseif msg == "vitoria" then
+    changeLed(gpio.HIGH,gpio.LOW)
+  elseif msg == "derrota" then 
+    changeLed(gpio.LOW,gpio.HIGH)
   else
-    if msg == "next" then
-      estado = "respondendo"
-      changeLed(gpio.HIGH,gpio.HIGH)
-    elseif msg == id then
-      estado = "vitoria"
-      changeLed(gpio.HIGH,gpio.LOW)
-    else
-      estado = "derrota"
-      changeLed(gpio.LOW,gpio.HIGH)
-    end
+    changeLed(gpio.LOW,gpio.LOW)
   end
+  
 end
 
 function parseMessage(rawMsg)
-  print(message:match("([1-9]+)%s*,%s*([12])")) -- debbug
-  return  message:match("([1-9]+)%s*,%s*([12])")
+  return  rawMsg:match("([0-9]+)%s*,%s*(%w*)")
 end
 
 function subscribe (m, client) 
@@ -112,15 +94,16 @@ function subscribe (m, client)
        -- fç chamada qdo inscrição ok:
        function (client) 
          print("subscribe success")
-         publica(id..",sub")
        end
   )
 
   m:on("message", 
     function(client, topic, data) 
-      --print(topic .. ":" )
+      print(topic .. ":" )
       dest, msg = parseMessage(data)
-      if dest == "0" or dest == id then -- broadcast ou para o id do mcu
+      dest = tonumber(dest)
+      print("dest,msg ", dest == 0, dest==id,dest,id,msg)
+      if dest == 0 or dest == id then -- broadcast ou para o id do mcu
         handleMessage(msg)
       end
     end
@@ -128,9 +111,9 @@ function subscribe (m, client)
 end
 
 function connect (  ) 
-  m = mqtt.Client("love", 120)
+  m = mqtt.Client("mcu"..id, 120)
   -- conecta com servidor mqtt na porta 1883 (com o endereço esva dando erro)
-  m:connect("test.mosquitto.org", 1883, 0,
+  m:connect("85.119.83.194", 1883, 0,
     -- callback em caso de sucesso  
     function(client) 
       print("conected")
@@ -145,8 +128,8 @@ end
 
 wificonf = {  
   -- verificar ssid e senha  
-  ssid = "Minharede",  
-  pwd = "12345678B",  
+  ssid = "Frioland",  
+  pwd = "9999999999",  
   got_ip_cb = function (con)
                 print("connecting")
                 connect()
